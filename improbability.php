@@ -17,7 +17,7 @@ while (true) {
   $stat = getPoolStat($ch, $COIN, $WALLET);
 
   if ($stat['blocksFound'] > $blocks) {
-   if ($blocks > 0)
+   if ($blocks >= 0)
       msg('Pool block found. Restarting...');
     $blocks = $stat['blocksFound'];
     $blocks_solo = $stat['blocksFoundSolo'];
