@@ -1,9 +1,9 @@
 <?php
 
 $WALLET = "t1fD9dVevpYn61jYMGS9WYR1DyPhngkTXnn";
-$COIN = "btg";
+$COIN = "zel";
 $HASHRATE = 100;
-$TARGET = 0.01;
+$TARGET = 90;
 $CONF['HTTP_HEADERS'] = array('accept' => 'application/json');
 
 $blocks = -1;
@@ -45,11 +45,11 @@ while (true) {
   }
 
   if ($solo && ($stat['blocksFoundSolo'] > $blocks_solo)) {
-    $blocks_solo = $stat['blocksFoundSolo'];
     msg("SOLO block found!!!!!");
     stopSoloMining();
     startPoolMining();
     $solo = false;
+    $blocks = -1;
   }
 
   sleep(60);
