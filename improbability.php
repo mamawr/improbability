@@ -79,7 +79,7 @@ function loadProgress() {
     $fh = fopen(dirname(__FILE__) . '/progress.dat', 'r');
     while (($line = fgets($fh)) !== false) {
       if (preg_match('/^(\w*)[[:blank:]]*=[[:blank:]]*(\w*)/is', $line, $matches))
-        $$matches[1] = $matches[2];
+        ${$matches[1]} = $matches[2];
     }
     fclose($fh);
     if (isset($startHeight) && isset($blocksBehind) && isset($target) && isset($dest)) {
