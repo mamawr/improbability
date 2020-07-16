@@ -17,7 +17,7 @@ while (true) {
   $stat = getPoolStat($ch, $COIN, $WALLET);
 
   if ($stat['blocksFound'] > $blocks) {
-   if ($blocks >= 0)
+    if ($blocks >= 0)
       msg('Pool block found. Restarting...');
     $blocks = $stat['blocksFound'];
     $blocks_solo = $stat['blocksFoundSolo'];
@@ -52,7 +52,18 @@ while (true) {
     $blocks = -1;
   }
 
+  saveProgress($startHeight, $blocksBehind, $TARGET, $dest);
   sleep(60);
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+function saveProgress($startHeight, $blocksBehind, $target, $dest) {
+  $fh = fopen(dirname(__FILE__) . '/progress.dat', 'w');
+  fwrite($fh, "startHeight = " . $startHeight . PHP_EOL);
+  fwrite($fh, "blocksBehind = " . $blocksBehind . PHP_EOL);
+  fwrite($fh, "target = " . $target . PHP_EOL);
+  fwrite($fh, "dest = " . $dest . PHP_EOL);
+  fclose($fh);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -132,5 +143,3 @@ function dl_get($ch, $url, $params = array()) {
   else
     print_r($info);
 }
-
-
