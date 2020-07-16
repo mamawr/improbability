@@ -9,19 +9,36 @@ $CONF['HTTP_HEADERS'] = array('accept' => 'application/json');
 $blocks = -1;
 $solo = false;
 
-$ch = dl_init();
+msg('Initializing...');
 
-startPoolMining();
+$ch = dl_init();
 
 while (true) {
   $stat = getPoolStat($ch, $COIN, $WALLET);
 
   if ($stat['blocksFound'] > $blocks) {
-    if ($blocks >= 0)
+    if ($blocks >= 0) {
       msg('Pool block found. Restarting...');
+      $startHeight = $stat['height'];
+    } else {
+      // Startup
+      $progress = loadProgress();
+      if (is_array($progress)) {
+        msg('Previous session found. Restoring...');
+        list($sess_startHeight, $sess_blocksBehind, $sess_target, $sess_dest) = $progress;
+        $startHeight = $stat['height'] - $sess_blocksBehind;
+        $TARGET = $sess_target;
+        $solo = ($sess_dest == 'SOLO');
+      } else {
+        $startHeight = $stat['height'];
+      }
+      if ($solo)
+        startSoloMining();
+      else
+        startPoolMining();
+    }
     $blocks = $stat['blocksFound'];
     $blocks_solo = $stat['blocksFoundSolo'];
-    $startHeight = $stat['height'];
   }
 
   $portion = $stat['networkHashrate'] / $HASHRATE;
@@ -54,6 +71,22 @@ while (true) {
 
   saveProgress($startHeight, $blocksBehind, $TARGET, $dest);
   sleep(60);
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+function loadProgress() {
+  if (file_exists(dirname(__FILE__) . '/progress.dat')) {
+    $fh = fopen(dirname(__FILE__) . '/progress.dat', 'r');
+    while (($line = fgets($fh)) !== false) {
+      if (preg_match('/^(\w*)[[:blank:]]*=[[:blank:]]*(\w*)/is', $line, $matches))
+        $$matches[1] = $matches[2];
+    }
+    fclose($fh);
+    if (isset($startHeight) && isset($blocksBehind) && isset($target) && isset($dest)) {
+      return array($startHeight, $blocksBehind, $target, $dest);
+    }
+  }
+  return false;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
