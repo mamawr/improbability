@@ -19,6 +19,7 @@ while (true) {
   if ($stat['blocksFound'] > $blocks) {
     if ($blocks >= 0) {
       msg('Pool block found. Restarting...');
+      saveBlockFound($stat, $startHeight, 'POOL');
       $startHeight = $stat['height'];
     } else {
       // Startup
@@ -63,14 +64,29 @@ while (true) {
 
   if ($solo && ($stat['blocksFoundSolo'] > $blocks_solo)) {
     msg("SOLO block found!!!!!");
+    saveBlockFound($stat, $startHeight, 'SOLO');
     stopSoloMining();
     startPoolMining();
     $solo = false;
     $blocks = -1;
   }
 
+saveBlockFound($stat, $startHeight, 'SOLO');
   saveProgress($startHeight, $blocksBehind, $TARGET, $dest);
   sleep(60);
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+function saveBlockFound($stat, $startHeight, $dest) {
+  global $HASHRATE;
+
+  $portion = $stat['networkHashrate'] / $HASHRATE;
+  $blocksBehind = $stat['height'] - $startHeight;
+  $progress = $blocksBehind * 100 / $portion;
+
+  $fh = fopen(dirname(__FILE__) . '/history.dat', 'a');
+  fwrite($fh, sprintf("%.2f%%\t%s\t%s\t%d/%d".PHP_EOL, $progress, $dest, date("Y-m-d H:i:s"), $blocksBehind, $portion));
+  fclose($fh);
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
