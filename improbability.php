@@ -13,6 +13,22 @@ msg('Initializing...');
 
 $ch = dl_init();
 
+declare(ticks=1);
+function signalHandler($signo) {
+  global $solo;
+  print("Ctrl+C received, killing miner..." . PHP_EOL);
+  if ($solo)
+    stopSoloMining();
+  else
+    stopPoolMining();
+  exit(1);
+}
+if (!function_exists('pcntl_signal'))
+  print('WARNING! pcntl extension disabled, see http://www.php.net/manual/en/pcntl.installation.php for more info' . PHP_EOL);
+else
+  pcntl_signal(SIGINT, 'signalHandler');
+
+
 while (true) {
   $stat = getPoolStat($ch, $COIN, $WALLET);
 
