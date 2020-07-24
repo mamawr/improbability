@@ -3,7 +3,7 @@
 $WALLET = "t1fD9dVevpYn61jYMGS9WYR1DyPhngkTXnn";
 $COIN = "zel";
 $HASHRATE = 100;
-$TARGET = 90;
+$DEVIATION = 15;
 $CONF['HTTP_HEADERS'] = array('accept' => 'application/json');
 
 $blocks = -1;
@@ -18,8 +18,11 @@ while (true) {
 
   if ($stat['blocksFound'] > $blocks) {
     if ($blocks >= 0) {
+      // Pool block found
       msg('Pool block found. Restarting...');
       saveBlockFound($stat, $startHeight, 'POOL');
+      $TARGET = predict();
+      msg("Target: $TARGET%");
       $startHeight = $stat['height'];
     } else {
       // Startup
@@ -32,6 +35,8 @@ while (true) {
         $solo = ($sess_dest == 'SOLO');
       } else {
         $startHeight = $stat['height'];
+        $TARGET = predict();
+        msg("Target: $TARGET%");
       }
       if ($solo)
         startSoloMining();
@@ -51,6 +56,7 @@ while (true) {
   $dest = $solo ? 'SOLO' : 'POOL';
 
   $msg = sprintf("Height: %d\t", $stat['height']);
+  $msg .= sprintf("Target: %d%%\t", $TARGET);
   $msg .= sprintf("Progress: %.2f%% (%d/%d) on %s\t", $progress, $blocksBehind, $portion, $dest);
   $msg .= sprintf("Left: %.1f hours (%d blocks)\t", $timeLeft, $blocksLeft);
   msg($msg);
@@ -66,14 +72,36 @@ while (true) {
     msg("SOLO block found!!!!!");
     saveBlockFound($stat, $startHeight, 'SOLO');
     stopSoloMining();
+    $TARGET = predict();
+    msg("Target: $TARGET%");
     startPoolMining();
     $solo = false;
     $blocks = -1;
   }
 
-saveBlockFound($stat, $startHeight, 'SOLO');
   saveProgress($startHeight, $blocksBehind, $TARGET, $dest);
   sleep(60);
+}
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////
+function predict() {
+  global $DEVIATION;
+  $sum = 0;
+  $cnt = 0;
+  if (file_exists(dirname(__FILE__) . '/history.dat')) {
+    $fh = fopen(dirname(__FILE__) . '/history.dat', 'r');
+    while (($line = fgets($fh)) !== false) {
+      if (preg_match('/^(.*?)%\t/is', $line, $matches)) {
+        $sum += $matches[1];
+        $cnt++;
+      }
+    }
+    fclose($fh);
+    if ($cnt > 1) {
+      return (100-$DEVIATION)*($cnt+1)-$sum;
+    }
+  }
+  return 100 - $DEVIATION;
 }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////
