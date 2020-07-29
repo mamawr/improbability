@@ -104,17 +104,22 @@ function predict() {
   global $DEVIATION;
   $sum = 0;
   $cnt = 0;
+  $avg_luck_sum = 0;
   if (file_exists(dirname(__FILE__) . '/history.dat')) {
     $fh = fopen(dirname(__FILE__) . '/history.dat', 'r');
     while (($line = fgets($fh)) !== false) {
       if (preg_match('/^(.*?)%\t/is', $line, $matches)) {
         $sum += $matches[1];
+        $avg_luck_sum += $matches[1];
         $cnt++;
       }
     }
     fclose($fh);
-    if ($cnt > 1) {
-      return (100-$DEVIATION)*($cnt+1)-$sum;
+    if ($cnt > 0) {
+      $avg_luck = $avg_luck_sum / $cnt;
+      print("avg_luck: " . $avg_luck . PHP_EOL);
+      //return ($avg_luck-$DEVIATION)*($cnt+1)-$sum;
+      return ($avg_luck)*($cnt+1)-$sum - $DEVIATION;
     }
   }
   return 100 - $DEVIATION;
@@ -198,7 +203,7 @@ function getPoolStat($ch, $coin, $wallet) {
   $stat['difficulty'] = isset($res['nodes'][0]['difficulty']) ? $res['nodes'][0]['difficulty'] : 0;
   $stat['height'] = isset($res['nodes'][0]['height']) ? $res['nodes'][0]['height'] : 0;
   $stat['avgBlockTime'] = isset($res['nodes'][0]['avgBlockTime']) ? $res['nodes'][0]['avgBlockTime'] : 0;
-  $res = json_decode(dl_get($ch, $solo_api . '/stats'), true);
+  $res = json_decode(dl_get($ch, $solo_api . '/accounts/' . $wallet), true);
   $stat['blocksFoundSolo'] = isset($res['stats']['blocksFound']) ? $res['stats']['blocksFound'] : 0;
   return $stat;
 }
